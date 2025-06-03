@@ -1,0 +1,45 @@
+{
+  "name": "atp-investment-agent",
+  "version": "0.0.1",
+  "description": "ATP investment agent uses the adk-ts to make purchases on IQAI's atp platform",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch index.ts",
+    "start": "node dist/index.js",
+    "start:once": "node dist/index.js --once",
+    "clean": "rimraf dist",
+    "prebuild": "pnpm clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IQAICOM/atp-investment-agent.git"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "mcp",
+    "adk-ts",
+    "IQAI"
+  ],
+  "author": "IQAI",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/IQAICOM/atp-investment-agent/issues"
+  },
+  "homepage": "https://github.com/IQAICOM/atp-investment-agent#readme",
+  "dependencies": {
+    "@iqai/adk": "^0.0.4",
+    "node-cron": "^4.1.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "@types/node-cron": "^3.0.11",
+    "typescript": "^5.7.2",
+    "tsx": "^4.19.2",
+    "rimraf": "^6.0.1"
+  }
+}
