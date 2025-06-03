@@ -1,7 +1,7 @@
-import { Agent } from "@iqai/adk";
+import { Agent, type BaseTool } from "@iqai/adk";
 
 export class AgentDiscoveryAgent extends Agent {
-	constructor(atpTools: any[], llmModel: string) {
+	constructor(atpTools: BaseTool[], llmModel: string) {
 		super({
 			name: "agent_discoverer",
 			model: llmModel,

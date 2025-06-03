@@ -1,4 +1,4 @@
-import { createPublicClient, http, erc20Abi } from "viem";
+import { http, createPublicClient, erc20Abi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { fraxtal } from "viem/chains";
 import { env } from "../env";

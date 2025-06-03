@@ -1,14 +1,22 @@
-import { LangGraphAgent, type LangGraphAgentConfig } from "@iqai/adk";
 import {
-	PortfolioAnalysisAgent,
+	type BaseTool,
+	LangGraphAgent,
+	type LangGraphAgentConfig,
+} from "@iqai/adk";
+import {
 	AgentDiscoveryAgent,
 	InvestmentDecisionAgent,
 	InvestmentExecutorAgent,
+	PortfolioAnalysisAgent,
 	TelegramNotifierAgent,
 } from "./agents";
 
 export class AtpInvestmentAgent extends LangGraphAgent {
-	constructor(atpTools: any[], telegramTools: any[], llmModel: string) {
+	constructor(
+		atpTools: BaseTool[],
+		telegramTools: BaseTool[],
+		llmModel: string,
+	) {
 		const config: LangGraphAgentConfig = {
 			name: "atp_investment_workflow",
 			description:

@@ -1,7 +1,7 @@
-import { Agent } from "@iqai/adk";
+import { Agent, type BaseTool } from "@iqai/adk";
 
 export class TelegramNotifierAgent extends Agent {
-	constructor(telegramTools: any[], llmModel: string) {
+	constructor(telegramTools: BaseTool[], llmModel: string) {
 		super({
 			name: "telegram_notifier",
 			model: llmModel,

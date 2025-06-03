@@ -1,15 +1,16 @@
 import {
+	type BaseTool,
 	LLMRegistry,
 	type McpConfig,
-	OpenAILLM,
 	type MessageRole,
+	OpenAILLM,
 } from "@iqai/adk";
 import { McpError, McpToolset } from "@iqai/adk";
 import * as dotenv from "dotenv";
-import { AtpInvestmentAgent } from "./atp-investment-agent";
-import { WalletService } from "./services";
 import * as cron from "node-cron";
+import { AtpInvestmentAgent } from "./atp-investment-agent";
 import { env } from "./env";
+import { type WalletInfo, WalletService } from "./services";
 
 dotenv.config();
 LLMRegistry.registerLLM(OpenAILLM);
@@ -20,7 +21,7 @@ const DEBUG = env.DEBUG;
 let atpToolset: McpToolset | null = null;
 let telegramToolset: McpToolset | null = null;
 let atpInvestmentAgent: AtpInvestmentAgent | null = null;
-let walletInfo: any = null;
+let walletInfo: WalletInfo | null = null;
 
 // previous run results
 const runOutputs: string[] = [];
@@ -96,7 +97,7 @@ async function setup() {
 		// Initialize Telegram MCP Toolset (optional)
 		console.log("🔄 Connecting to Telegram MCP server...");
 
-		let telegramTools: any[] = [];
+		let telegramTools: BaseTool[] = [];
 		if (
 			env.TELEGRAM_BOT_TOKEN &&
 			env.TELEGRAM_CHAT_ID &&

@@ -1,9 +1,9 @@
 import {
-	getIqBalance,
 	calculateInvestmentAmount,
+	formatIqAmount,
+	getIqBalance,
 	getWalletAddress,
 	validateSufficientBalance,
-	formatIqAmount,
 } from "../utils/wallet-utils";
 
 export interface WalletInfo {
