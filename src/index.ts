@@ -72,7 +72,6 @@ async function setup() {
 				args: ["-y", "@iqai/mcp-atp"],
 				env: {
 					ATP_WALLET_PRIVATE_KEY: walletPrivateKey,
-					WALLET_PRIVATE_KEY: walletPrivateKey,
 					PATH: process.env.PATH || "",
 					ATP_USE_DEV: env.ATP_USE_DEV,
 				},
