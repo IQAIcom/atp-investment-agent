@@ -103,53 +103,40 @@ async function setup() {
 			env.TELEGRAM_CHAT_ID &&
 			env.TELEGRAM_SERVER_KEY
 		) {
-			try {
-				const telegramConfig: McpConfig = {
-					name: "Telegram MCP Client",
-					description: "Client for Telegram notifications",
-					debug: DEBUG,
-					retryOptions: {
-						maxRetries: 2,
-						initialDelay: 200,
+			const telegramConfig: McpConfig = {
+				name: "Telegram MCP Client",
+				description: "Client for Telegram notifications",
+				debug: DEBUG,
+				retryOptions: {
+					maxRetries: 2,
+					initialDelay: 200,
+				},
+				transport: {
+					mode: "stdio",
+					command: "npx",
+					args: [
+						"-y",
+						"@smithery/cli@latest",
+						"run",
+						"@NexusX-MCP/telegram-mcp-server",
+						"--key",
+						env.TELEGRAM_SERVER_KEY,
+						"--profile",
+						env.TELEGRAM_PROFILE_ID,
+					],
+					env: {
+						TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
+						TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
+						PATH: process.env.PATH || "",
 					},
-					transport: {
-						mode: "stdio",
-						command: "npx",
-						args: [
-							"-y",
-							"@smithery/cli@latest",
-							"run",
-							"@NexusX-MCP/telegram-mcp-server",
-							"--key",
-							env.TELEGRAM_SERVER_KEY,
-							"--profile",
-							env.TELEGRAM_PROFILE_ID,
-						],
-						env: {
-							TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
-							TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
-							PATH: process.env.PATH || "",
-						},
-					},
-				};
+				},
+			};
 
-				telegramToolset = new McpToolset(telegramConfig);
-				telegramTools = await telegramToolset.getTools();
+			telegramToolset = new McpToolset(telegramConfig);
+			telegramTools = await telegramToolset.getTools();
 
-				console.log(
-					`✅ Connected to Telegram MCP (${telegramTools.length} tools available)`,
-				);
-			} catch (error) {
-				console.log(
-					"⚠️  Telegram MCP connection failed, continuing without notifications",
-				);
-				if (DEBUG) {
-					console.log("   Telegram error:", error);
-				}
-			}
-		} else {
 			console.log(
-				"⚠️  Telegram configuration not found, continuing without notifications",
+				`✅ Connected to Telegram MCP (${telegramTools.length} tools available)`,
 			);
 		}
 
