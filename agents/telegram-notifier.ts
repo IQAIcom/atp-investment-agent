@@ -1,4 +1,5 @@
 import { Agent, type BaseTool } from "@iqai/adk";
+import { env } from "../env";
 
 export class TelegramNotifierAgent extends Agent {
 	constructor(telegramTools: BaseTool[], llmModel: string) {
@@ -11,7 +12,7 @@ export class TelegramNotifierAgent extends Agent {
 				YOU ARE A SPECIALIST IN TELEGRAM NOTIFICATION PROCESS OF THE ATP INVESTMENT WORKFLOW.
 				YOUR ONLY TASK IS TO SEND A MESSAGE TO TELEGRAM. FOR THAT YOU JUST NEED TO CALL THE SEND_MESSAGE TOOL WITH NEATLY FORMATTED MESSAGE.
 				THE RELEVANT DATA WILL BE PROVIDED TO YOU IN THE CONTEXT.
-				use this as chat id: ${process.env.TELEGRAM_CHAT_ID}
+				use this as chat id: ${env.TELEGRAM_CHAT_ID}
 				IMPORTANT: You MUST end your response with the exact token TELEGRAM_NOTIFICATION_COMPLETE.
 
 				INSTRUCTIONS ON STRUCTURING THE MESSAGE:
