@@ -10,250 +10,255 @@ import * as dotenv from "dotenv";
 import * as cron from "node-cron";
 import { AtpInvestmentAgent } from "./agents/atp-investment-agent";
 import { env } from "./env";
-import { type WalletInfo, WalletService } from "./services";
+import { type WalletInfo, WalletService } from "./services/wallet";
 
 dotenv.config();
 LLMRegistry.registerLLM(OpenAILLM);
 
 const DEBUG = env.DEBUG === "true";
-
-// Top-level toolset and agent variables
-let atpToolset: McpToolset | null = null;
-let telegramToolset: McpToolset | null = null;
-let atpInvestmentAgent: AtpInvestmentAgent | null = null;
-let walletInfo: WalletInfo | null = null;
-
-// previous run results
-const runOutputs: string[] = [];
 const MAX_RUN_OUTPUTS = 10;
 
-async function setup() {
+interface AppState {
+	atpToolset: McpToolset | null;
+	telegramToolset: McpToolset | null;
+	agent: AtpInvestmentAgent | null;
+	walletInfo: WalletInfo | null;
+	runOutputs: string[];
+}
+
+const state: AppState = {
+	atpToolset: null,
+	telegramToolset: null,
+	agent: null,
+	walletInfo: null,
+	runOutputs: [],
+};
+
+function validateEnvironment(): void {
+	if (!env.WALLET_PRIVATE_KEY) {
+		console.error("❌ Error: WALLET_PRIVATE_KEY is required in .env file");
+		process.exit(1);
+	}
+	if (!env.LLM_MODEL) {
+		console.error("❌ Error: LLM_MODEL is required in .env file");
+		process.exit(1);
+	}
+}
+
+async function initializeAtpToolset(): Promise<BaseTool[]> {
+	console.log("🔄 Connecting to ATP MCP server...");
+
+	const config: McpConfig = {
+		name: "ATP MCP Client",
+		description: "Client for ATP agent investments",
+		debug: DEBUG,
+		retryOptions: { maxRetries: 2, initialDelay: 200 },
+		transport: {
+			mode: "stdio",
+			command: "npx",
+			args: ["-y", "@iqai/mcp-atp"],
+			env: {
+				ATP_WALLET_PRIVATE_KEY: env.WALLET_PRIVATE_KEY,
+				PATH: process.env.PATH || "",
+				ATP_USE_DEV: env.ATP_USE_DEV,
+			},
+		},
+	};
+
+	state.atpToolset = new McpToolset(config);
+	const tools = await state.atpToolset.getTools();
+
+	if (tools.length === 0) {
+		console.warn("⚠️ No ATP tools retrieved from MCP server.");
+		process.exit(1);
+	}
+
+	console.log(`✅ Connected to ATP MCP (${tools.length} tools available)`);
+	return tools;
+}
+
+async function initializeTelegramToolset(): Promise<BaseTool[]> {
+	if (
+		!env.TELEGRAM_BOT_TOKEN ||
+		!env.TELEGRAM_CHAT_ID ||
+		!env.TELEGRAM_SERVER_KEY
+	) {
+		return [];
+	}
+
+	console.log("🔄 Connecting to Telegram MCP server...");
+
+	const config: McpConfig = {
+		name: "Telegram MCP Client",
+		description: "Client for Telegram notifications",
+		debug: DEBUG,
+		retryOptions: { maxRetries: 2, initialDelay: 200 },
+		transport: {
+			mode: "stdio",
+			command: "npx",
+			args: [
+				"-y",
+				"@smithery/cli@latest",
+				"run",
+				"@NexusX-MCP/telegram-mcp-server",
+				"--key",
+				env.TELEGRAM_SERVER_KEY,
+				"--profile",
+				env.TELEGRAM_PROFILE_ID,
+			],
+			env: {
+				TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
+				TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
+				PATH: process.env.PATH || "",
+			},
+		},
+	};
+
+	state.telegramToolset = new McpToolset(config);
+	const tools = await state.telegramToolset.getTools();
+
+	console.log(`✅ Connected to Telegram MCP (${tools.length} tools available)`);
+	return tools;
+}
+
+async function initializeWallet(): Promise<WalletInfo> {
+	const walletService = new WalletService(env.WALLET_PRIVATE_KEY);
+	return await walletService.displayWalletStatus();
+}
+
+async function setup(): Promise<void> {
 	console.log("🤖 Starting ATP Investment Agent Demo");
-	console.log("====================================");
 	console.log(
 		`💰 Real investments will be made with your IQ tokens (${env.ATP_INVESTMENT_PERCENTAGE * 100}% of balance)`,
 	);
 	console.log("🔐 Using wallet private key from environment variables");
 	console.log("====================================");
 
-	// Check required environment variables
-	const walletPrivateKey = env.WALLET_PRIVATE_KEY;
-	const llmModel = env.LLM_MODEL;
-
-	if (!walletPrivateKey) {
-		console.error("❌ Error: WALLET_PRIVATE_KEY is required in .env file");
-		console.log("Please add your wallet private key to the .env file.");
-		process.exit(1);
-	}
-
-	if (!llmModel) {
-		console.error("❌ Error: LLM_MODEL is required in .env file");
-		console.log(
-			"Please set LLM_MODEL to a supported model (e.g., gemini-2.0-flash) in your .env file.",
-		);
-		process.exit(1);
-	}
+	validateEnvironment();
 
 	try {
-		// Initialize ATP MCP Toolset
-		console.log("🔄 Connecting to ATP MCP server...");
+		const [atpTools, telegramTools, walletInfo] = await Promise.all([
+			initializeAtpToolset(),
+			initializeTelegramToolset(),
+			initializeWallet(),
+		]);
 
-		const atpConfig: McpConfig = {
-			name: "ATP MCP Client",
-			description: "Client for ATP agent investments",
-			debug: DEBUG,
-			retryOptions: {
-				maxRetries: 2,
-				initialDelay: 200,
-			},
-			transport: {
-				mode: "stdio",
-				command: "npx",
-				args: ["-y", "@iqai/mcp-atp"],
-				env: {
-					ATP_WALLET_PRIVATE_KEY: walletPrivateKey,
-					PATH: process.env.PATH || "",
-					ATP_USE_DEV: env.ATP_USE_DEV,
-				},
-			},
-		};
-
-		atpToolset = new McpToolset(atpConfig);
-		const atpTools = await atpToolset.getTools();
-
-		if (atpTools.length === 0) {
-			console.warn("⚠️ No ATP tools retrieved from MCP server.");
-			process.exit(1);
-		}
-
-		console.log(`✅ Connected to ATP MCP (${atpTools.length} tools available)`);
-
-		// Initialize Telegram MCP Toolset (optional)
-		console.log("🔄 Connecting to Telegram MCP server...");
-
-		let telegramTools: BaseTool[] = [];
-		if (
-			env.TELEGRAM_BOT_TOKEN &&
-			env.TELEGRAM_CHAT_ID &&
-			env.TELEGRAM_SERVER_KEY
-		) {
-			const telegramConfig: McpConfig = {
-				name: "Telegram MCP Client",
-				description: "Client for Telegram notifications",
-				debug: DEBUG,
-				retryOptions: {
-					maxRetries: 2,
-					initialDelay: 200,
-				},
-				transport: {
-					mode: "stdio",
-					command: "npx",
-					args: [
-						"-y",
-						"@smithery/cli@latest",
-						"run",
-						"@NexusX-MCP/telegram-mcp-server",
-						"--key",
-						env.TELEGRAM_SERVER_KEY,
-						"--profile",
-						env.TELEGRAM_PROFILE_ID,
-					],
-					env: {
-						TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
-						TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
-						PATH: process.env.PATH || "",
-					},
-				},
-			};
-
-			telegramToolset = new McpToolset(telegramConfig);
-			telegramTools = await telegramToolset.getTools();
-
-			console.log(
-				`✅ Connected to Telegram MCP (${telegramTools.length} tools available)`,
-			);
-		}
-
-		const walletService = new WalletService(walletPrivateKey);
-		walletInfo = await walletService.displayWalletStatus();
-
-		// Create the ATP Investment Agent
-		console.log("🤖 Initializing ATP Investment Agent...");
-		atpInvestmentAgent = new AtpInvestmentAgent(
+		state.walletInfo = walletInfo;
+		state.agent = new AtpInvestmentAgent(
 			atpTools,
 			telegramTools,
-			llmModel,
+			env.LLM_MODEL,
 		);
+
+		console.log("🤖 ATP Investment Agent initialized successfully");
 	} catch (error) {
 		console.error("❌ Setup failed:", error);
 		process.exit(1);
 	}
 }
 
-async function runAgentCycle() {
-	if (!atpInvestmentAgent || !walletInfo) {
-		console.error("❌ Agent or wallet info not initialized. Did setup() fail?");
+function buildContextMessage(): string {
+	if (state.runOutputs.length === 0) return "";
+
+	return `Previous run outputs (last ${state.runOutputs.length}):
+${state.runOutputs.map((log, i) => `${i + 1}. ${log}`).join("\n")}
+---
+`;
+}
+
+function buildWalletMessage(): string {
+	if (!state.walletInfo) return "";
+
+	return `Wallet Information:
+- Address: ${state.walletInfo.address}
+- IQ Balance: ${state.walletInfo.iqBalance} IQ
+- Investment Budget: ${state.walletInfo.investmentAmount} IQ`;
+}
+
+async function runAgentCycle(): Promise<void> {
+	if (!state.agent || !state.walletInfo) {
+		console.error("❌ Agent or wallet info not initialized");
 		return;
 	}
+
 	try {
-		// Prepare context message with last N transaction logs
-		let contextMsg = "";
-		if (runOutputs.length > 0) {
-			contextMsg = `Previous run outputs (last ${runOutputs.length}):
-			${runOutputs.map((log, i) => `${i + 1}. ${log}`).join("\n")}
-			---
-			`;
-		}
-		console.log("prev run outputs", runOutputs);
 		const messages = [
-			{
-				role: "system" as MessageRole,
-				content: contextMsg,
-			},
-			{
-				role: "user" as MessageRole,
-				content: `
-						Wallet Information:
-						- Address: ${walletInfo.address}
-						- IQ Balance: ${walletInfo.iqBalance} IQ
-						- Investment Budget: ${walletInfo.investmentAmount} IQ
-					`,
-			},
+			{ role: "system" as MessageRole, content: buildContextMessage() },
+			{ role: "user" as MessageRole, content: buildWalletMessage() },
 		];
 
 		console.log("🚀 Starting ATP investment workflow...");
-		console.log("==============================================");
-		const result = await atpInvestmentAgent.run({ messages });
-		console.log("\n🎯 ATP Investment Workflow Complete!");
-		console.log("====================================");
+		const result = await state.agent.run({ messages });
+		console.log("🎯 ATP Investment Workflow Complete!");
+
 		if (result.content) {
 			console.log(`Final Result: ${result.content}`);
-			runOutputs.push(result.content);
-			if (runOutputs.length > MAX_RUN_OUTPUTS) runOutputs.shift();
+			state.runOutputs.push(result.content);
+			if (state.runOutputs.length > MAX_RUN_OUTPUTS) {
+				state.runOutputs.shift();
+			}
 		} else {
 			console.log("❌ Warning: Final result content is empty");
-			console.log("Full result object:", JSON.stringify(result, null, 2));
 		}
 	} catch (error) {
 		if (error instanceof McpError) {
 			console.error(`❌ MCP Error (${error.type}): ${error.message}`);
-			if (error.originalError) {
-				console.error("   Original error:", error.originalError);
-			}
 		} else {
 			console.error("❌ Unexpected error:", error);
 		}
 	}
 }
 
-async function cleanup() {
-	console.log("\n🧹 Cleaning up MCP connections...");
-	if (atpToolset) {
-		await atpToolset
-			.close()
-			.catch((err) => console.error("Error closing ATP toolset:", err));
-	}
-	if (telegramToolset) {
-		await telegramToolset
-			.close()
-			.catch((err) => console.error("Error closing Telegram toolset:", err));
-	}
+async function cleanup(): Promise<void> {
+	console.log("🧹 Cleaning up MCP connections...");
+
+	await Promise.allSettled([
+		state.atpToolset?.close(),
+		state.telegramToolset?.close(),
+	]);
+
 	console.log("✅ Cleanup complete");
 }
 
-(async () => {
-	await setup();
+async function runOnce(): Promise<void> {
+	console.log("🏃 Running agent once...");
+	await runAgentCycle();
+	await cleanup();
+	process.exit(0);
+}
+
+async function runScheduled(): Promise<void> {
 	const cronSchedule = env.ATP_CRON_SCHEDULE;
+	console.log(`⏰ Scheduling agent to run: ${cronSchedule}`);
+
+	cron.schedule(cronSchedule, runAgentCycle, { timezone: "UTC" });
+	await runAgentCycle();
+	process.stdin.resume();
+}
+
+async function main(): Promise<void> {
+	await setup();
+
 	const runMode = process.argv[2];
-
 	if (runMode === "--once" || runMode === "-1") {
-		console.log("🏃 Running agent once...");
-		await runAgentCycle();
-		await cleanup();
-		process.exit(0);
+		await runOnce();
 	} else {
-		console.log(`⏰ Scheduling agent to run: ${cronSchedule}`);
-		cron.schedule(
-			cronSchedule,
-			async () => {
-				await runAgentCycle();
-				await cleanup();
-			},
-			{ timezone: "UTC" },
-		);
-		await runAgentCycle();
-		process.stdin.resume();
+		await runScheduled();
 	}
-})();
+}
 
-process.on("SIGINT", async () => {
-	console.log("\n🛑 Received SIGINT, shutting down gracefully...");
+// Signal handlers
+const gracefulShutdown = async (signal: string) => {
+	console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
 	await cleanup();
 	process.exit(0);
-});
+};
 
-process.on("SIGTERM", async () => {
-	console.log("\n🛑 Received SIGTERM, shutting down gracefully...");
-	await cleanup();
-	process.exit(0);
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+
+// Start the application
+main().catch((error) => {
+	console.error("❌ Application failed:", error);
+	process.exit(1);
 });
