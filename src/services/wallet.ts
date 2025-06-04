@@ -1,10 +1,14 @@
-import {
-	calculateInvestmentAmount,
-	formatIqAmount,
-	getIqBalance,
-	getWalletAddress,
-	validateSufficientBalance,
-} from "../utils/wallet-utils";
+import { createPublicClient } from "viem";
+import { http } from "viem";
+import { erc20Abi } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { fraxtal } from "viem/chains";
+import { env } from "../env";
+
+const IQT_ADDRESS = "0xCc3023635dF54FC0e43F47bc4BeB90c3d1fbDa9f";
+const IQ_ADDRESS = "0x6EFB84bda519726Fa1c65558e520B92b51712101";
+export const IQ_TOKEN_ADDRESS =
+	env.ATP_USE_DEV === "true" ? IQT_ADDRESS : IQ_ADDRESS;
 
 export interface WalletInfo {
 	address: string;
@@ -42,9 +46,9 @@ export class WalletService {
 		console.log("💰 Getting wallet information...");
 
 		try {
-			const address = getWalletAddress(this.privateKey);
-			const iqBalance = await getIqBalance(address);
-			const investmentAmount = calculateInvestmentAmount(
+			const address = this.getWalletAddress(this.privateKey);
+			const iqBalance = await this.getIqBalance(address);
+			const investmentAmount = this.calculateInvestmentAmount(
 				iqBalance,
 				this.investmentPercentage,
 			);
@@ -59,8 +63,8 @@ export class WalletService {
 				address,
 				iqBalance,
 				investmentAmount,
-				formattedBalance: formatIqAmount(iqBalance),
-				formattedInvestment: formatIqAmount(investmentAmount),
+				formattedBalance: this.formatIqAmount(iqBalance),
+				formattedInvestment: this.formatIqAmount(investmentAmount),
 			};
 		} catch (error) {
 			console.error("❌ Failed to get wallet information:", error);
@@ -81,7 +85,9 @@ export class WalletService {
 		const info = walletInfo || (await this.getWalletInfo());
 
 		// Check minimum balance
-		if (!validateSufficientBalance(info.iqBalance, info.investmentAmount)) {
+		if (
+			!this.validateSufficientBalance(info.iqBalance, info.investmentAmount)
+		) {
 			return {
 				isValid: false,
 				error: "Insufficient IQ balance for investment",
@@ -133,8 +139,8 @@ export class WalletService {
 	 * Quick balance check without full validation
 	 */
 	async getQuickBalance(): Promise<{ address: string; balance: string }> {
-		const address = getWalletAddress(this.privateKey);
-		const balance = await getIqBalance(address);
+		const address = this.getWalletAddress(this.privateKey);
+		const balance = await this.getIqBalance(address);
 		return { address, balance };
 	}
 
@@ -165,7 +171,7 @@ export class WalletService {
 		}
 
 		// Check sufficient balance with buffer for gas
-		if (!validateSufficientBalance(walletBalance, proposedAmount)) {
+		if (!this.validateSufficientBalance(walletBalance, proposedAmount)) {
 			return {
 				isValid: false,
 				error: "Insufficient balance including gas fee buffer",
@@ -174,18 +180,118 @@ export class WalletService {
 
 		return { isValid: true };
 	}
-
-	/**
-	 * Gets the wallet address without balance check
-	 */
-	getAddress(): string {
-		return getWalletAddress(this.privateKey);
-	}
-
 	/**
 	 * Updates minimum investment amount
 	 */
 	setMinInvestmentAmount(amount: number): void {
 		this.minInvestmentAmount = amount;
+	}
+
+	/**
+	 * Reads the IQ token balance for a given wallet address
+	 *
+	 * @param walletAddress - The wallet address to check balance for
+	 * @returns Promise<string> - The IQ balance in human-readable format (not wei)
+	 */
+	async getIqBalance(walletAddress: string): Promise<string> {
+		try {
+			const publicClient = createPublicClient({
+				chain: fraxtal,
+				transport: http(),
+			});
+
+			const balance = await publicClient.readContract({
+				address: IQ_TOKEN_ADDRESS,
+				abi: erc20Abi,
+				functionName: "balanceOf",
+				args: [walletAddress as `0x${string}`],
+			});
+
+			// Convert balance from wei to token units (assuming 18 decimals)
+			const formattedBalance = (Number(balance) / 1e18).toFixed(2);
+			return formattedBalance;
+		} catch (error) {
+			console.error("Error reading IQ balance:", error);
+			throw new Error(
+				`Failed to read IQ balance: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	/**
+	 * Calculates the investment amount based on the investment percentage
+	 *
+	 * @param totalBalance - Total IQ balance as string
+	 * @param investmentPercentage - Investment percentage as number
+	 * @returns string - Investment amount as string
+	 */
+	calculateInvestmentAmount(
+		totalBalance: string,
+		investmentPercentage: number,
+	): string {
+		const balance = Number.parseFloat(totalBalance);
+		const investmentAmount = balance * investmentPercentage;
+
+		// Return with reasonable precision (avoid tiny fractions)
+		return investmentAmount.toFixed(2);
+	}
+
+	/**
+	 * Validates if wallet has sufficient IQ balance for investment
+	 *
+	 * @param balance - Current IQ balance as string
+	 * @param investmentAmount - Proposed investment amount as string
+	 * @returns boolean - True if sufficient balance available
+	 */
+	validateSufficientBalance(
+		balance: string,
+		investmentAmount: string,
+	): boolean {
+		const balanceNum = Number.parseFloat(balance);
+		const investmentNum = Number.parseFloat(investmentAmount);
+
+		// Ensure some buffer (1.1x investment amount) to account for gas fees
+		return balanceNum >= investmentNum * 1.1;
+	}
+
+	/**
+	 * Formats IQ amount for display in notifications
+	 *
+	 * @param amount - IQ amount as string
+	 * @returns string - Formatted amount with appropriate decimal places
+	 */
+	formatIqAmount(amount: string): string {
+		const num = Number.parseFloat(amount);
+
+		if (num >= 1000000) {
+			return `${(num / 1000000).toFixed(2)}M IQ`;
+		}
+		if (num >= 1000) {
+			return `${(num / 1000).toFixed(2)}K IQ`;
+		}
+		return `${num.toFixed(2)} IQ`;
+	}
+
+	/**
+	 * Gets wallet address from private key
+	 *
+	 * @param privateKey - Wallet private key (with or without 0x prefix)
+	 * @returns string - Wallet address
+	 */
+	getWalletAddress(privateKey: string): string {
+		try {
+			// Ensure private key has 0x prefix
+			const formattedPrivateKey = privateKey.startsWith("0x")
+				? privateKey
+				: `0x${privateKey}`;
+
+			const account = privateKeyToAccount(formattedPrivateKey as `0x${string}`);
+			return account.address;
+		} catch (error) {
+			console.error("Error deriving wallet address:", error);
+			throw new Error(
+				`Failed to derive wallet address: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
 	}
 }

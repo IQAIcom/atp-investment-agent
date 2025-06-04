@@ -15,7 +15,7 @@ import { type WalletInfo, WalletService } from "./services";
 dotenv.config();
 LLMRegistry.registerLLM(OpenAILLM);
 
-const DEBUG = env.DEBUG;
+const DEBUG = env.DEBUG === "true";
 
 // Top-level toolset and agent variables
 let atpToolset: McpToolset | null = null;
@@ -61,7 +61,7 @@ async function setup() {
 		const atpConfig: McpConfig = {
 			name: "ATP MCP Client",
 			description: "Client for ATP agent investments",
-			debug: DEBUG === "true",
+			debug: DEBUG,
 			retryOptions: {
 				maxRetries: 2,
 				initialDelay: 200,
@@ -87,11 +87,6 @@ async function setup() {
 		}
 
 		console.log(`✅ Connected to ATP MCP (${atpTools.length} tools available)`);
-		if (DEBUG) {
-			for (const tool of atpTools) {
-				console.log(`   - ${tool.name}: ${tool.description}`);
-			}
-		}
 
 		// Initialize Telegram MCP Toolset (optional)
 		console.log("🔄 Connecting to Telegram MCP server...");
@@ -105,7 +100,7 @@ async function setup() {
 			const telegramConfig: McpConfig = {
 				name: "Telegram MCP Client",
 				description: "Client for Telegram notifications",
-				debug: DEBUG === "true",
+				debug: DEBUG,
 				retryOptions: {
 					maxRetries: 2,
 					initialDelay: 200,
@@ -139,14 +134,7 @@ async function setup() {
 			);
 		}
 
-		// Initialize wallet service and validate conditions
-		const minInvestment = env.ATP_MIN_INVESTMENT;
-		const investmentPercentage = env.ATP_INVESTMENT_PERCENTAGE;
-		const walletService = new WalletService(
-			walletPrivateKey,
-			minInvestment,
-			investmentPercentage,
-		);
+		const walletService = new WalletService(walletPrivateKey);
 		walletInfo = await walletService.displayWalletStatus();
 
 		// Create the ATP Investment Agent
