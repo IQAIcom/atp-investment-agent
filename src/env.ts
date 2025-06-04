@@ -4,11 +4,13 @@ import { z } from "zod";
 config();
 
 export const envSchema = z.object({
+	PATH: z.string(),
 	DEBUG: z.string().default("false"),
 	ATP_USE_DEV: z.string().default("false"),
+	IQ_ADDRESS: z.string().default("0x6EFB84bda519726Fa1c65558e520B92b51712101"),
 	ATP_API_KEY: z.string(),
-	WALLET_PRIVATE_KEY: z.string(),
-	LLM_MODEL: z.string(),
+	WALLET_PRIVATE_KEY: z.string().min(5, "Wallet private key is required"),
+	LLM_MODEL: z.string().default("gemini-2.0-flash"),
 	TELEGRAM_CHAT_ID: z.string(),
 	TELEGRAM_BOT_TOKEN: z.string(),
 	TELEGRAM_SERVER_KEY: z.string(),
@@ -16,11 +18,11 @@ export const envSchema = z.object({
 	ATP_INVESTMENT_PERCENTAGE: z
 		.string()
 		.transform((val) => Number.parseFloat(val))
-		.default("0.01"),
+		.default("0.1"),
 	ATP_MIN_INVESTMENT: z
 		.string()
 		.transform((val) => Number.parseFloat(val))
-		.default("1500"),
+		.default("1000"),
 	ATP_CRON_SCHEDULE: z.string().default("0 */3 * * *"),
 });
 

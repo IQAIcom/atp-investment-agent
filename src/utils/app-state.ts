@@ -19,13 +19,6 @@ export const state: AppState = {
 	runOutputs: [],
 };
 
-export function validateEnvironment(): void {
-	if (!env.WALLET_PRIVATE_KEY || !env.LLM_MODEL) {
-		console.error("❌ Missing required environment variables");
-		process.exit(1);
-	}
-}
-
 export function createAtpConfig(): McpConfig {
 	return {
 		name: "ATP MCP Client",
@@ -38,22 +31,14 @@ export function createAtpConfig(): McpConfig {
 			args: ["-y", "@iqai/mcp-atp"],
 			env: {
 				ATP_WALLET_PRIVATE_KEY: env.WALLET_PRIVATE_KEY,
-				PATH: process.env.PATH || "",
-				ATP_USE_DEV: env.ATP_USE_DEV,
+				...(env.ATP_USE_DEV === "true" ? { ATP_USE_DEV: "true" } : {}),
+				PATH: env.PATH,
 			},
 		},
 	};
 }
 
 export function createTelegramConfig(): McpConfig | null {
-	if (
-		!env.TELEGRAM_BOT_TOKEN ||
-		!env.TELEGRAM_CHAT_ID ||
-		!env.TELEGRAM_SERVER_KEY
-	) {
-		return null;
-	}
-
 	return {
 		name: "Telegram MCP Client",
 		description: "Client for Telegram notifications",
@@ -75,7 +60,7 @@ export function createTelegramConfig(): McpConfig | null {
 			env: {
 				TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
 				TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
-				PATH: process.env.PATH || "",
+				PATH: env.PATH,
 			},
 		},
 	};

@@ -1,28 +1,40 @@
 import {
 	type BaseTool,
+	GoogleLLM,
 	LLMRegistry,
 	McpError,
 	McpToolset,
 	type MessageRole,
-	OpenAILLM,
 } from "@iqai/adk";
 import * as cron from "node-cron";
-import { AtpInvestmentAgent } from "./agents/atp-investment-agent";
+import type { AtpInvestmentAgent } from "./agents/atp-investment-agent";
 import { env } from "./env";
-import { WalletService } from "./services/wallet";
 import {
 	buildMessages,
 	createAtpConfig,
 	createTelegramConfig,
-	logStart,
 	saveResult,
 	state,
-	validateEnvironment,
 } from "./utils/app-state";
 
-LLMRegistry.registerLLM(OpenAILLM);
+LLMRegistry.registerLLM(GoogleLLM);
 
-async function initializeToolsets() {
+export async function runOnce(agent: AtpInvestmentAgent) {
+	await runCycle(agent);
+	await cleanup();
+}
+
+export async function runScheduled(agent: AtpInvestmentAgent) {
+	console.log(`⏰ Scheduled: ${env.ATP_CRON_SCHEDULE}`);
+	cron.schedule(env.ATP_CRON_SCHEDULE, () => runCycle(agent), {
+		timezone: "UTC",
+	});
+
+	await runCycle(agent);
+	process.stdin.resume();
+}
+
+export async function initializeToolsets() {
 	const atpConfig = createAtpConfig();
 	state.atpToolset = new McpToolset(atpConfig);
 	const atpTools = await state.atpToolset.getTools();
@@ -34,24 +46,7 @@ async function initializeToolsets() {
 		telegramTools = await state.telegramToolset.getTools();
 	}
 
-	if (atpTools.length === 0) {
-		console.error("❌ No ATP tools available");
-		process.exit(1);
-	}
-
 	return { atpTools, telegramTools };
-}
-
-async function setup() {
-	logStart();
-	validateEnvironment();
-
-	const { atpTools, telegramTools } = await initializeToolsets();
-	const walletService = new WalletService(env.WALLET_PRIVATE_KEY);
-
-	state.walletInfo = await walletService.displayWalletStatus();
-
-	return new AtpInvestmentAgent(atpTools, telegramTools, env.LLM_MODEL);
 }
 
 async function runCycle(agent: AtpInvestmentAgent) {
@@ -76,29 +71,18 @@ async function runCycle(agent: AtpInvestmentAgent) {
 	}
 }
 
-async function cleanup() {
+export async function cleanup() {
 	await Promise.allSettled([
 		state.atpToolset?.close(),
 		state.telegramToolset?.close(),
 	]);
 }
 
-export async function runOnce() {
-	const agent = await setup();
-	await runCycle(agent);
+const gracefulShutdown = async (signal: string) => {
+	console.log(`🛑 ${signal} received, shutting down...`);
 	await cleanup();
-}
+	process.exit(0);
+};
 
-export async function runScheduled() {
-	const agent = await setup();
-
-	console.log(`⏰ Scheduled: ${env.ATP_CRON_SCHEDULE}`);
-	cron.schedule(env.ATP_CRON_SCHEDULE, () => runCycle(agent), {
-		timezone: "UTC",
-	});
-
-	await runCycle(agent);
-	process.stdin.resume();
-}
-
-export { cleanup };
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

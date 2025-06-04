@@ -5,10 +5,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { fraxtal } from "viem/chains";
 import { env } from "../env";
 
-const IQT_ADDRESS = "0xCc3023635dF54FC0e43F47bc4BeB90c3d1fbDa9f";
-const IQ_ADDRESS = "0x6EFB84bda519726Fa1c65558e520B92b51712101";
-export const IQ_TOKEN_ADDRESS =
-	env.ATP_USE_DEV === "true" ? IQT_ADDRESS : IQ_ADDRESS;
+export const IQ_TOKEN_ADDRESS = env.IQ_ADDRESS as `0x${string}`;
 
 export interface WalletInfo {
 	address: string;
@@ -29,14 +26,10 @@ export class WalletService {
 	private minInvestmentAmount: number;
 	private investmentPercentage: number;
 
-	constructor(
-		privateKey: string,
-		minInvestmentAmount = 10,
-		investmentPercentage = 0.01,
-	) {
+	constructor(privateKey: string) {
 		this.privateKey = privateKey;
-		this.minInvestmentAmount = minInvestmentAmount;
-		this.investmentPercentage = investmentPercentage;
+		this.minInvestmentAmount = env.ATP_MIN_INVESTMENT;
+		this.investmentPercentage = env.ATP_INVESTMENT_PERCENTAGE;
 	}
 
 	/**
