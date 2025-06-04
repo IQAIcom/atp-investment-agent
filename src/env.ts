@@ -4,7 +4,7 @@ import { z } from "zod";
 config();
 
 export const envSchema = z.object({
-	DEBUG: z.boolean().default(false),
+	DEBUG: z.string().default("false"),
 	ATP_USE_DEV: z.string().default("false"),
 	ATP_API_KEY: z.string(),
 	WALLET_PRIVATE_KEY: z.string(),

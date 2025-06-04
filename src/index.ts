@@ -8,7 +8,7 @@ import {
 import { McpError, McpToolset } from "@iqai/adk";
 import * as dotenv from "dotenv";
 import * as cron from "node-cron";
-import { AtpInvestmentAgent } from "./atp-investment-agent";
+import { AtpInvestmentAgent } from "./agents/atp-investment-agent";
 import { env } from "./env";
 import { type WalletInfo, WalletService } from "./services";
 
@@ -61,7 +61,7 @@ async function setup() {
 		const atpConfig: McpConfig = {
 			name: "ATP MCP Client",
 			description: "Client for ATP agent investments",
-			debug: DEBUG,
+			debug: DEBUG === "true",
 			retryOptions: {
 				maxRetries: 2,
 				initialDelay: 200,
@@ -105,7 +105,7 @@ async function setup() {
 			const telegramConfig: McpConfig = {
 				name: "Telegram MCP Client",
 				description: "Client for Telegram notifications",
-				debug: DEBUG,
+				debug: DEBUG === "true",
 				retryOptions: {
 					maxRetries: 2,
 					initialDelay: 200,

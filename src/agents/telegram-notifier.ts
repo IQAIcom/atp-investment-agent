@@ -34,7 +34,7 @@ export class TelegramNotifierAgent extends Agent {
 				TELEGRAM_NOTIFICATION_COMPLETE
 		`,
 			tools: telegramTools,
-			maxToolExecutionSteps: 5,
+			maxToolExecutionSteps: 2,
 		});
 	}
 }
