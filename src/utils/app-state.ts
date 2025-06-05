@@ -31,7 +31,11 @@ export function createAtpConfig(): McpConfig {
 			args: ["-y", "@iqai/mcp-atp"],
 			env: {
 				ATP_WALLET_PRIVATE_KEY: env.WALLET_PRIVATE_KEY,
-				...(env.ATP_USE_DEV === "true" ? { ATP_USE_DEV: "true" } : {}),
+				...(env.ATP_API_URL ? { ATP_API_URL: env.ATP_API_URL } : {}),
+				...(env.ATP_AGENT_ROUTER_ADDRESS
+					? { ATP_AGENT_ROUTER_ADDRESS: env.ATP_AGENT_ROUTER_ADDRESS }
+					: {}),
+				ATP_BASE_TOKEN_ADDRESS: env.IQ_ADDRESS,
 				PATH: env.PATH,
 			},
 		},
