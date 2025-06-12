@@ -24,7 +24,7 @@
 - pnpm (package manager)
 - IQAI wallet with IQ tokens
 - Access to OpenAI or Google Gemini LLM API (for LLM_MODEL)
-- (Optional) Telegram bot credentials for notifications
+- Telegram bot credentials for notifications
 
 ## Installation
 
@@ -40,7 +40,7 @@ Copy the example environment file and fill in your credentials:
 cp example.env .env
 ```
 
-Edit `.env` with your wallet, LLM, and (optionally) Telegram details:
+Edit `.env` with your wallet, LLM, and Telegram details:
 
 ```env
 LLM_MODEL=gemini-2.0-flash
@@ -49,8 +49,6 @@ ATP_USE_DEV=true
 ATP_API_KEY=your_api_key
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
-TELEGRAM_SERVER_KEY=your_telegram_server_key
-TELEGRAM_PROFILE_ID=your_telegram_profile_id
 ATP_INVESTMENT_PERCENTAGE=0.01
 ATP_MIN_INVESTMENT=10
 ATP_CRON_SCHEDULE="0 */3 * * *"

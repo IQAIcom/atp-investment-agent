@@ -51,19 +51,9 @@ export function createTelegramConfig(): McpConfig | null {
 		transport: {
 			mode: "stdio",
 			command: "npx",
-			args: [
-				"-y",
-				"@smithery/cli@latest",
-				"run",
-				"@NexusX-MCP/telegram-mcp-server",
-				"--key",
-				env.TELEGRAM_SERVER_KEY,
-				"--profile",
-				env.TELEGRAM_PROFILE_ID,
-			],
+			args: ["-y", "@iqai/mcp-telegram"],
 			env: {
 				TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
-				TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
 				PATH: env.PATH,
 			},
 		},

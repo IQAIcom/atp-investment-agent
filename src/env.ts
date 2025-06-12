@@ -13,8 +13,6 @@ export const envSchema = z.object({
 	LLM_MODEL: z.string().default("gemini-2.0-flash"),
 	TELEGRAM_CHAT_ID: z.string(),
 	TELEGRAM_BOT_TOKEN: z.string(),
-	TELEGRAM_SERVER_KEY: z.string(),
-	TELEGRAM_PROFILE_ID: z.string(),
 	ATP_INVESTMENT_PERCENTAGE: z
 		.string()
 		.transform((val) => Number.parseFloat(val))
