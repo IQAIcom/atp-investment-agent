@@ -1,7 +1,5 @@
 import {
 	type BaseTool,
-	GoogleLLM,
-	LLMRegistry,
 	McpError,
 	McpToolset,
 	type MessageRole,
@@ -16,8 +14,6 @@ import {
 	saveResult,
 	state,
 } from "./utils/app-state";
-
-LLMRegistry.registerLLM(GoogleLLM);
 
 export async function runOnce(agent: AtpInvestmentAgent) {
 	await runCycle(agent);
