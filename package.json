@@ -12,6 +12,7 @@
 		"prebuild": "pnpm clean",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
+		"test": "jest --passWithNoTests",
 		"format": "biome format --write .",
 		"prepare": "husky",
 		"precommit": "lint-staged"
@@ -34,16 +35,22 @@
 		"@iqai/adk": "^0.0.15",
 		"dotenv": "^16.4.5",
 		"node-cron": "^4.1.0",
+		"ts-node": "^10.9.2",
 		"viem": "^2.29.4",
 		"zod": "^3.23.8"
 	},
 	"devDependencies": {
+		"@babel/preset-env": "^7.27.2",
+		"@babel/preset-typescript": "^7.27.1",
 		"@biomejs/biome": "^1.9.4",
+		"@types/jest": "^30.0.0",
 		"@types/node": "^22.15.29",
 		"@types/node-cron": "^3.0.11",
 		"husky": "^9.0.0",
+		"jest": "^30.0.2",
 		"lint-staged": "^16.1.0",
 		"rimraf": "^6.0.1",
+		"ts-jest": "^29.4.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.7.2"
 	}
