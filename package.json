@@ -7,7 +7,6 @@
 		"build": "tsc",
 		"dev": "tsx watch src/index.ts",
 		"start": "node dist/index.js",
-		"start:once": "node dist/index.js --once",
 		"clean": "rimraf dist",
 		"prebuild": "pnpm clean",
 		"lint": "biome check .",
