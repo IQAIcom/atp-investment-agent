@@ -67,7 +67,7 @@ export function logStart(): void {
 	);
 }
 
-export function buildMessages(): Array<{ role: string; content: string }> {
+export function buildContext(): string {
 	const context =
 		state.runOutputs.length > 0
 			? `Previous runs: ${state.runOutputs.slice(-3).join(", ")}\n---\n`
@@ -77,10 +77,12 @@ export function buildMessages(): Array<{ role: string; content: string }> {
 		? `Address: ${state.walletInfo.address}\nIQ Balance: ${state.walletInfo.iqBalance}\nBudget: ${state.walletInfo.investmentAmount}`
 		: "";
 
-	return [
-		{ role: "system", content: context },
-		{ role: "user", content: wallet },
-	];
+	return `
+	Context:
+	${context}
+
+	Wallet:
+	${wallet}`;
 }
 
 export function saveResult(content: string): void {

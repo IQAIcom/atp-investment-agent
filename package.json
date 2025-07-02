@@ -31,7 +31,7 @@
 	},
 	"homepage": "https://github.com/IQAICOM/atp-investment-agent#readme",
 	"dependencies": {
-		"@iqai/adk": "^0.0.15",
+		"@iqai/adk": "^0.1.1",
 		"dotenv": "^16.4.5",
 		"node-cron": "^4.1.0",
 		"viem": "^2.29.4",
