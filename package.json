@@ -9,15 +9,15 @@
 		"start": "node dist/index.js",
 		"clean": "rimraf dist",
 		"prebuild": "pnpm clean",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
+		"lint": "biome check ./src",
+		"lint:fix": "biome check --write ./src",
 		"test": "vitest run",
-		"format": "biome format --write .",
+		"format": "biome format --write ./src",
 		"prepare": "husky",
 		"precommit": "lint-staged"
 	},
 	"lint-staged": {
-		"*.{ts,js,json}": ["biome check --write"]
+		"*.{ts,js,json}": ["biome check --write ./src"]
 	},
 	"repository": {
 		"type": "git",
