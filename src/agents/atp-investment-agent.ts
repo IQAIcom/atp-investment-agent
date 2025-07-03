@@ -1,38 +1,40 @@
-import {
-	type BaseTool,
-	LangGraphAgent,
-	type LangGraphAgentConfig,
-} from "@iqai/adk";
-import { AcquireAgent } from "./acquire";
-import { TelegramNotifierAgent } from "./telegram-notifier";
+import { AgentBuilder, type BaseTool, type BuiltAgent } from "@iqai/adk";
+import { createAcquireAgent } from "./acquire";
+import { createTelegramNotifierAgent } from "./telegram-notifier";
 
-export class AtpInvestmentAgent extends LangGraphAgent {
-	constructor(
-		atpTools: BaseTool[],
-		telegramTools: BaseTool[],
-		llmModel: string,
-	) {
-		const config: LangGraphAgentConfig = {
-			name: "atp_investment_workflow",
-			description:
-				"Autonomous ATP agent investment workflow with discovery, analysis, and execution",
-			nodes: [
+export async function createAtpInvestmentAgent(
+	atpTools: BaseTool[],
+	telegramTools: BaseTool[],
+	llmModel: string,
+): Promise<BuiltAgent> {
+	// Create sub-agents
+	const acquireAgent = await createAcquireAgent(atpTools, llmModel);
+	const telegramAgent = await createTelegramNotifierAgent(
+		telegramTools,
+		llmModel,
+	);
+
+	// Create the main workflow using LangGraph agent type
+	return await AgentBuilder.create("atp_investment_workflow")
+		.withDescription(
+			"Autonomous ATP agent investment workflow with discovery, analysis, and execution",
+		)
+		.asLangGraph(
+			[
 				{
 					name: "acquire",
-					agent: new AcquireAgent(atpTools, llmModel),
+					agent: acquireAgent.agent,
 					targets: ["telegram_notifier"],
 				},
 				{
 					name: "telegram_notifier",
-					agent: new TelegramNotifierAgent(telegramTools, llmModel),
+					agent: telegramAgent.agent,
 					condition: (_) => true,
 					targets: [],
 				},
 			],
-			rootNode: "acquire",
-			maxSteps: 12,
-		};
-
-		super(config);
-	}
+			"acquire",
+		)
+		.withQuickSession("atp_investment_workflow", "uid_1234")
+		.build();
 }
