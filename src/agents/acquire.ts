@@ -1,13 +1,12 @@
-import { Agent, type BaseTool } from "@iqai/adk";
+import { AgentBuilder, type BaseTool } from "@iqai/adk";
 
-export class AcquireAgent extends Agent {
-	constructor(atpTools: BaseTool[], llmModel: string) {
-		super({
-			name: "acquire",
-			model: llmModel,
-			description:
-				"Makes final investment decisions based on portfolio and discovery analysis",
-			instructions: `
+export function createAcquireAgent(atpTools: BaseTool[], llmModel: string) {
+	return AgentBuilder.create("acquire")
+		.withModel(llmModel)
+		.withDescription(
+			"Makes final investment decisions based on portfolio and discovery analysis",
+		)
+		.withInstruction(`
 			YOU ARE A MASTER IN AQUIRING AGENT TOKENS FROM THE ATP PLATFORM.
 			FOR NOW YOU ARE INSTRUCTED TO AQUIRE TOKENS FOR ANY SINGLE AGENT.
 			FOR THAT YOU ARE SUPPOSED TO CONSIDER BOTH THE USER HOLDINGS AND ALL AGENTS AVAILABLE. USER HAS ALREADY PROVIDED HIS
@@ -43,9 +42,7 @@ export class AcquireAgent extends Agent {
 			ERROR: [ERROR_MESSAGE/DETAILED ANALYSIS OF THE FAILURE]
 
 			AQUIRE_FAILED.
-			`,
-			tools: atpTools,
-			maxToolExecutionSteps: 5,
-		});
-	}
+		`)
+		.withTools(...atpTools)
+		.build();
 }

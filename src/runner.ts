@@ -1,32 +1,32 @@
 import {
 	type BaseTool,
+	type BuiltAgent,
 	McpError,
 	McpToolset,
-	type MessageRole,
 } from "@iqai/adk";
 import * as cron from "node-cron";
-import type { AtpInvestmentAgent } from "./agents/atp-investment-agent";
 import { env } from "./env";
 import {
-	buildMessages,
+	buildContext,
 	createAtpConfig,
 	createTelegramConfig,
 	saveResult,
 	state,
 } from "./utils/app-state";
 
-export async function runOnce(agent: AtpInvestmentAgent) {
-	await runCycle(agent);
-	await cleanup();
-}
-
-export async function runScheduled(agent: AtpInvestmentAgent) {
+export async function runScheduled(builtAgent: BuiltAgent) {
 	console.log(`⏰ Scheduled: ${env.ATP_CRON_SCHEDULE}`);
-	cron.schedule(env.ATP_CRON_SCHEDULE, () => runCycle(agent), {
-		timezone: "UTC",
-	});
 
-	await runCycle(agent);
+	cron.schedule(
+		env.ATP_CRON_SCHEDULE,
+		async () => {
+			await runCycle(builtAgent);
+		},
+		{
+			timezone: "UTC",
+		},
+	);
+
 	process.stdin.resume();
 }
 
@@ -45,18 +45,32 @@ export async function initializeToolsets() {
 	return { atpTools, telegramTools };
 }
 
-async function runCycle(agent: AtpInvestmentAgent) {
+async function runCycle(builtAgent: BuiltAgent) {
 	try {
 		console.log("🚀 Running investment cycle...");
-		const messages = buildMessages().map((msg) => ({
-			...msg,
-			role: msg.role as MessageRole,
-		}));
-		const result = await agent.run({ messages });
+		const { runner, session } = builtAgent;
+		if (!runner || !session) {
+			throw new Error("Runner or session not found");
+		}
+		const context = buildContext();
 
-		if (result.content) {
-			console.log(`✅ Result: ${result.content}`);
-			saveResult(result.content);
+		for await (const event of runner.runAsync({
+			userId: "uid_1234",
+			sessionId: session.id,
+			newMessage: {
+				role: "user",
+				parts: [{ text: context }],
+			},
+		})) {
+			if (event.content?.parts) {
+				const content = event.content.parts
+					.map((part: { text?: string }) => part.text || "")
+					.join("");
+				if (content) {
+					console.log(`✅ Result: ${content}`);
+					saveResult(content);
+				}
+			}
 		}
 	} catch (error) {
 		const errorMsg =
