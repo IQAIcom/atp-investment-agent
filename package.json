@@ -34,12 +34,12 @@
 		"@iqai/adk": "^0.1.1",
 		"dotenv": "^16.4.5",
 		"node-cron": "^4.1.0",
-		"ts-node": "^10.9.2",
 		"viem": "^2.29.4",
 		"zod": "^3.23.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"ts-node": "^10.9.2",
 		"@types/node": "^22.15.29",
 		"@types/node-cron": "^3.0.11",
 		"husky": "^9.0.0",
