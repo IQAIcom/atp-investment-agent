@@ -1,20 +1,27 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createPublicClient } from "viem";
 import { erc20Abi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { WalletService } from "./wallet";
 
-jest.mock("viem", () => ({
-	...jest.requireActual("viem"),
-	createPublicClient: jest.fn(),
-}));
+vi.mock("viem", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("viem")>();
+	return {
+		...actual,
+		createPublicClient: vi.fn(() => ({
+			readContract: vi.fn(),
+		})),
+		http: vi.fn().mockImplementation(() => "http://mock-url"),
+	};
+});
 
-jest.mock("viem/accounts", () => ({
-	privateKeyToAccount: jest.fn().mockImplementation(() => ({
+vi.mock("viem/accounts", () => ({
+	privateKeyToAccount: vi.fn().mockImplementation(() => ({
 		address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
 	})),
 }));
 
-jest.mock("../env", () => ({
+vi.mock("../env", () => ({
 	env: {
 		IQ_ADDRESS: "0x123",
 		ATP_MIN_INVESTMENT: 100,
@@ -29,10 +36,10 @@ describe("WalletService", () => {
 	let walletService: WalletService;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
-		(privateKeyToAccount as jest.Mock).mockReturnValue({
+		vi.clearAllMocks();
+		vi.mocked(privateKeyToAccount).mockReturnValue({
 			address: mockAddress,
-		});
+		} as any);
 
 		walletService = new WalletService(mockPrivateKey);
 	});
@@ -62,7 +69,7 @@ describe("WalletService", () => {
 		});
 
 		it("should throw error for invalid private key", () => {
-			(privateKeyToAccount as jest.Mock).mockImplementation(() => {
+			vi.mocked(privateKeyToAccount).mockImplementation(() => {
 				throw new Error("Invalid private key");
 			});
 			expect(() => walletService.getWalletAddress("invalid")).toThrow(
@@ -74,12 +81,15 @@ describe("WalletService", () => {
 	describe("getIqBalance", () => {
 		it("should return formatted IQ balance", async () => {
 			const mockBalance = BigInt(150000000000000000000);
+
 			const mockPublicClient = {
-				readContract: jest.fn().mockResolvedValue(mockBalance),
+				readContract: vi.fn().mockResolvedValue(mockBalance),
 			};
-			(createPublicClient as jest.Mock).mockReturnValue(mockPublicClient);
+
+			vi.mocked(createPublicClient).mockReturnValue(mockPublicClient as any);
 
 			const result = await walletService.getIqBalance(mockAddress);
+
 			expect(result).toBe("150.00");
 			expect(mockPublicClient.readContract).toHaveBeenCalledWith({
 				address: "0x123",
@@ -91,9 +101,9 @@ describe("WalletService", () => {
 
 		it("should throw error when balance fetch fails", async () => {
 			const mockPublicClient = {
-				readContract: jest.fn().mockRejectedValue(new Error("RPC error")),
+				readContract: vi.fn().mockRejectedValue(new Error("RPC error")),
 			};
-			(createPublicClient as jest.Mock).mockReturnValue(mockPublicClient);
+			vi.mocked(createPublicClient).mockReturnValue(mockPublicClient as any);
 
 			await expect(walletService.getIqBalance(mockAddress)).rejects.toThrow(
 				"Failed to read IQ balance: RPC error",
@@ -129,7 +139,7 @@ describe("WalletService", () => {
 
 	describe("getWalletInfo", () => {
 		it("should return complete wallet info", async () => {
-			jest.spyOn(walletService, "getIqBalance").mockResolvedValue("1000.00");
+			vi.spyOn(walletService, "getIqBalance").mockResolvedValue("1000.00");
 			const result = await walletService.getWalletInfo();
 
 			expect(result).toEqual({
@@ -142,9 +152,9 @@ describe("WalletService", () => {
 		});
 
 		it("should throw error when balance fetch fails", async () => {
-			jest
-				.spyOn(walletService, "getIqBalance")
-				.mockRejectedValue(new Error("Balance error"));
+			vi.spyOn(walletService, "getIqBalance").mockRejectedValue(
+				new Error("Balance error"),
+			);
 			await expect(walletService.getWalletInfo()).rejects.toThrow(
 				"Failed to retrieve wallet information: Balance error",
 			);
@@ -153,7 +163,7 @@ describe("WalletService", () => {
 
 	describe("validateInvestmentConditions", () => {
 		beforeEach(() => {
-			jest.spyOn(walletService, "getWalletInfo").mockResolvedValue({
+			vi.spyOn(walletService, "getWalletInfo").mockResolvedValue({
 				address: mockAddress,
 				iqBalance: "1100.00",
 				investmentAmount: "100.00",
@@ -168,7 +178,7 @@ describe("WalletService", () => {
 		});
 
 		it("should return invalid when balance is insufficient", async () => {
-			jest.spyOn(walletService, "getWalletInfo").mockResolvedValue({
+			vi.spyOn(walletService, "getWalletInfo").mockResolvedValue({
 				address: mockAddress,
 				iqBalance: "99.00",
 				investmentAmount: "100.00",
@@ -218,7 +228,7 @@ describe("WalletService", () => {
 
 	describe("displayWalletStatus", () => {
 		it("should return wallet info when valid", async () => {
-			jest.spyOn(walletService, "getWalletInfo").mockResolvedValue({
+			vi.spyOn(walletService, "getWalletInfo").mockResolvedValue({
 				address: mockAddress,
 				iqBalance: "1100.00",
 				investmentAmount: "100.00",
@@ -231,7 +241,7 @@ describe("WalletService", () => {
 		});
 
 		it("should throw when validation fails", async () => {
-			jest.spyOn(walletService, "getWalletInfo").mockResolvedValue({
+			vi.spyOn(walletService, "getWalletInfo").mockResolvedValue({
 				address: mockAddress,
 				iqBalance: "50.00",
 				investmentAmount: "5.00",
@@ -245,7 +255,7 @@ describe("WalletService", () => {
 
 	describe("getQuickBalance", () => {
 		it("should return address and balance", async () => {
-			jest.spyOn(walletService, "getIqBalance").mockResolvedValue("123.45");
+			vi.spyOn(walletService, "getIqBalance").mockResolvedValue("123.45");
 			const result = await walletService.getQuickBalance();
 			expect(result).toEqual({
 				address: mockAddress,
