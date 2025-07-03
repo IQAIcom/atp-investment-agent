@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createPublicClient } from "viem";
 import { erc20Abi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WalletService } from "./wallet";
 
 vi.mock("viem", async (importOriginal) => {
