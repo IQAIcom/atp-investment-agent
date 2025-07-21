@@ -9,14 +9,15 @@
 		"start": "node dist/index.js",
 		"clean": "rimraf dist",
 		"prebuild": "pnpm clean",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
-		"format": "biome format --write .",
+		"lint": "biome check ./src",
+		"lint:fix": "biome check --write ./src",
+		"test": "vitest run",
+		"format": "biome format --write ./src",
 		"prepare": "husky",
 		"precommit": "lint-staged"
 	},
 	"lint-staged": {
-		"*.{ts,js,json}": ["biome check --write"]
+		"*.{ts,js,json}": ["biome check --write ./src"]
 	},
 	"repository": {
 		"type": "git",
@@ -39,12 +40,14 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"ts-node": "^10.9.2",
 		"@types/node": "^22.15.29",
 		"@types/node-cron": "^3.0.11",
 		"husky": "^9.0.0",
 		"lint-staged": "^16.1.0",
 		"rimraf": "^6.0.1",
 		"tsx": "^4.19.2",
-		"typescript": "^5.7.2"
+		"typescript": "^5.7.2",
+		"vitest": "^3.2.4"
 	}
 }
