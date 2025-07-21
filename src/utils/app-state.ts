@@ -1,63 +1,42 @@
-import type { McpConfig } from "@iqai/adk";
-import type { McpToolset } from "@iqai/adk";
+import fs from "node:fs";
+import path from "node:path";
+import type { FullMessage, LlmRequest, McpToolset } from "@iqai/adk";
 import { env } from "../env";
 import type { WalletInfo } from "../services/wallet";
-
-const DEBUG = env.DEBUG === "true";
 
 export interface AppState {
 	atpToolset: McpToolset | null;
 	telegramToolset: McpToolset | null;
 	walletInfo: WalletInfo | null;
 	runOutputs: string[];
+	askRunner:
+		| ((message: string | FullMessage | LlmRequest) => Promise<string>)
+		| null;
 }
 
 export const state: AppState = {
 	atpToolset: null,
 	telegramToolset: null,
 	walletInfo: null,
+	askRunner: null,
 	runOutputs: [],
 };
 
-export function createAtpConfig(): McpConfig {
-	return {
-		name: "ATP MCP Client",
-		description: "Client for ATP agent investments",
-		debug: DEBUG,
-		retryOptions: { maxRetries: 2, initialDelay: 200 },
-		transport: {
-			mode: "stdio",
-			command: "npx",
-			args: ["-y", "@iqai/mcp-atp"],
-			env: {
-				ATP_WALLET_PRIVATE_KEY: env.WALLET_PRIVATE_KEY,
-				...(env.ATP_API_URL ? { ATP_API_URL: env.ATP_API_URL } : {}),
-				...(env.ATP_AGENT_ROUTER_ADDRESS
-					? { ATP_AGENT_ROUTER_ADDRESS: env.ATP_AGENT_ROUTER_ADDRESS }
-					: {}),
-				ATP_BASE_TOKEN_ADDRESS: env.IQ_ADDRESS,
-				PATH: env.PATH,
-			},
-		},
-	};
-}
+/**
+ * Get SQLite connection string for the given database name
+ * Creates the directory if it doesn't exist
+ * @param dbName Name of the database file (without extension)
+ * @returns SQLite connection string
+ */
+export function getSqliteConnectionString(dbName: string): string {
+	const dbPath = path.join(__dirname, "data", `${dbName}.db`);
 
-export function createTelegramConfig(): McpConfig | null {
-	return {
-		name: "Telegram MCP Client",
-		description: "Client for Telegram notifications",
-		debug: DEBUG,
-		retryOptions: { maxRetries: 2, initialDelay: 200 },
-		transport: {
-			mode: "stdio",
-			command: "npx",
-			args: ["-y", "@iqai/mcp-telegram"],
-			env: {
-				TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
-				PATH: env.PATH,
-			},
-		},
-	};
+	// Ensure the directory exists
+	if (!fs.existsSync(path.dirname(dbPath))) {
+		fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+	}
+
+	return `sqlite://${dbPath}`;
 }
 
 export function logStart(): void {

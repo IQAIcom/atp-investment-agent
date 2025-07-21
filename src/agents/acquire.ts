@@ -1,6 +1,7 @@
 import { AgentBuilder, type BaseTool } from "@iqai/adk";
 
-export function createAcquireAgent(atpTools: BaseTool[], llmModel: string) {
+// biome-ignore lint/suspicious/noExplicitAny: <llmModel is either string or language model>
+export function createAcquireAgent(atpTools: BaseTool[], llmModel: any) {
 	return AgentBuilder.create("acquire")
 		.withModel(llmModel)
 		.withDescription(
