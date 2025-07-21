@@ -1,4 +1,5 @@
 import { AgentBuilder, type BuiltAgent, McpAtp } from "@iqai/adk";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { env } from "../env";
 import { state } from "../utils/app-state";
 import { createAcquireAgent } from "./acquire";
@@ -10,6 +11,17 @@ export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 	}
 	const atpTools = await state.atpToolset.getTools();
 	const telegramTools = await state.telegramToolset.getTools();
+	// biome-ignore lint/suspicious/noExplicitAny: <This will either be string or LanguageModelV1>
+	let model: any;
+	if (env.OPEN_ROUTER_KEY) {
+		console.log("🚀 AGENT WILL USE OPENROUTER 🚀");
+		const openrouter = createOpenRouter({
+			apiKey: env.OPEN_ROUTER_KEY,
+		});
+		model = openrouter(env.LLM_MODEL);
+	} else {
+		model = env.LLM_MODEL;
+	}
 	const acquireAgent = await createAcquireAgent(atpTools, env.LLM_MODEL);
 	const telegramAgent = await createTelegramNotifierAgent(
 		telegramTools,
@@ -20,7 +32,7 @@ export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 		.withDescription(
 			"Autonomous ATP agent investment workflow with discovery, analysis, and execution",
 		)
-		.withModel(env.LLM_MODEL)
+		.withModel(model)
 		.asLangGraph(
 			[
 				{
