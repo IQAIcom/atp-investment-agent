@@ -3,7 +3,6 @@ import { env } from "../env";
 
 export function createTelegramNotifierAgent(
 	telegramTools: BaseTool[],
-	// biome-ignore lint/suspicious/noExplicitAny: <llmModel is either string or language model>
 	llmModel: any,
 ) {
 	return AgentBuilder.create("telegram_notifier")

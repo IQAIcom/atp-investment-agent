@@ -11,7 +11,6 @@ export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 	}
 	const atpTools = await state.atpToolset.getTools();
 	const telegramTools = await state.telegramToolset.getTools();
-	// biome-ignore lint/suspicious/noExplicitAny: <This will either be string or LanguageModelV1>
 	let model: any;
 	if (env.OPEN_ROUTER_KEY) {
 		console.log("🚀 AGENT WILL USE OPENROUTER 🚀");
