@@ -1,18 +1,12 @@
 import {
-	type BaseTool,
 	type BuiltAgent,
 	McpError,
-	McpToolset,
+	McpTelegram,
+	createSamplingHandler,
 } from "@iqai/adk";
 import * as cron from "node-cron";
 import { env } from "./env";
-import {
-	buildContext,
-	createAtpConfig,
-	createTelegramConfig,
-	saveResult,
-	state,
-} from "./utils/app-state";
+import { buildContext, saveResult, state } from "./utils/app-state";
 
 export async function runScheduled(builtAgent: BuiltAgent) {
 	console.log(`⏰ Scheduled: ${env.ATP_CRON_SCHEDULE}`);
@@ -30,48 +24,29 @@ export async function runScheduled(builtAgent: BuiltAgent) {
 	process.stdin.resume();
 }
 
-export async function initializeToolsets() {
-	const atpConfig = createAtpConfig();
-	state.atpToolset = new McpToolset(atpConfig);
-	const atpTools = await state.atpToolset.getTools();
-
-	const telegramConfig = createTelegramConfig();
-	let telegramTools: BaseTool[] = [];
-	if (telegramConfig) {
-		state.telegramToolset = new McpToolset(telegramConfig);
-		telegramTools = await state.telegramToolset.getTools();
+export async function initializeTelegramToolset() {
+	if (!state.askRunner) {
+		throw new Error("askRunner is not initialized");
 	}
+	const samplingHandler = createSamplingHandler(state.askRunner);
 
-	return { atpTools, telegramTools };
+	state.telegramToolset = McpTelegram({
+		samplingHandler,
+		env: {
+			TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
+			TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
+		},
+	});
 }
 
 async function runCycle(builtAgent: BuiltAgent) {
 	try {
 		console.log("🚀 Running investment cycle...");
-		const { runner, session } = builtAgent;
-		if (!runner || !session) {
-			throw new Error("Runner or session not found");
-		}
+		const { runner } = builtAgent;
 		const context = buildContext();
-
-		for await (const event of runner.runAsync({
-			userId: "uid_1234",
-			sessionId: session.id,
-			newMessage: {
-				role: "user",
-				parts: [{ text: context }],
-			},
-		})) {
-			if (event.content?.parts) {
-				const content = event.content.parts
-					.map((part: { text?: string }) => part.text || "")
-					.join("");
-				if (content) {
-					console.log(`✅ Result: ${content}`);
-					saveResult(content);
-				}
-			}
-		}
+		const response = await runner.ask(context);
+		console.log(`✅ Result: ${response}`);
+		saveResult(response);
 	} catch (error) {
 		const errorMsg =
 			error instanceof McpError

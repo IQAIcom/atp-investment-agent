@@ -1,7 +1,10 @@
 import * as dotenv from "dotenv";
-import { createAtpInvestmentAgent } from "./agents/atp-investment-agent";
+import {
+	createAtpInvestmentAgent,
+	initializeSocialsAgent,
+} from "./agents/atp-investment-agent";
 import { env } from "./env";
-import { initializeToolsets, runScheduled } from "./runner";
+import { initializeTelegramToolset, runScheduled } from "./runner";
 import { WalletService } from "./services/wallet";
 import { logStart, state } from "./utils/app-state";
 
@@ -14,13 +17,13 @@ async function main() {
 
 async function setup() {
 	logStart();
-
-	const { atpTools, telegramTools } = await initializeToolsets();
+	await initializeSocialsAgent();
+	await initializeTelegramToolset();
 	const walletService = new WalletService(env.WALLET_PRIVATE_KEY);
 
 	state.walletInfo = await walletService.displayWalletStatus();
 
-	return createAtpInvestmentAgent(atpTools, telegramTools, env.LLM_MODEL);
+	return createAtpInvestmentAgent();
 }
 
 main().catch((error) => {
