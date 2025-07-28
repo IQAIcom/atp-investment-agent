@@ -21,8 +21,8 @@ export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 	} else {
 		model = env.LLM_MODEL;
 	}
-	const acquireAgent = await createAcquireAgent(atpTools, env.LLM_MODEL);
-	const telegramAgent = await createTelegramNotifierAgent(
+	const acquireAgent = createAcquireAgent(atpTools, env.LLM_MODEL);
+	const telegramAgent = createTelegramNotifierAgent(
 		telegramTools,
 		env.LLM_MODEL,
 	);
@@ -36,14 +36,13 @@ export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 			[
 				{
 					name: "acquire",
-					agent: acquireAgent.agent,
+					agent: acquireAgent,
 					targets: ["telegram_notifier"],
 				},
 				{
 					name: "telegram_notifier",
-					agent: telegramAgent.agent,
+					agent: telegramAgent,
 					condition: (_) => true,
-					targets: [],
 				},
 			],
 			"acquire",

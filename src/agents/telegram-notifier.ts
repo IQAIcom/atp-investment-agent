@@ -1,16 +1,17 @@
-import { AgentBuilder, type BaseTool } from "@iqai/adk";
+import {
+	AgentBuilder,
+	type BaseTool,
+	InMemoryMemoryService,
+	LlmAgent,
+} from "@iqai/adk";
 import { env } from "../env";
 
-export function createTelegramNotifierAgent(
-	telegramTools: BaseTool[],
-	llmModel: any,
-) {
-	return AgentBuilder.create("telegram_notifier")
-		.withModel(llmModel)
-		.withDescription(
+export function createTelegramNotifierAgent(tools: BaseTool[], model: any) {
+	return new LlmAgent({
+		name: "telegram_notifier",
+		description:
 			"Sends a single formatted investment report to Telegram using the send_message tool.",
-		)
-		.withInstruction(`
+		instruction: `
 			YOU ARE A SPECIALIST IN TELEGRAM NOTIFICATION PROCESS OF THE ATP INVESTMENT WORKFLOW.
 			YOUR ONLY TASK IS TO SEND A MESSAGE TO TELEGRAM. FOR THAT YOU JUST NEED TO CALL THE SEND_MESSAGE TOOL WITH NEATLY FORMATTED MESSAGE.
 			THE RELEVANT DATA WILL BE PROVIDED TO YOU IN THE CONTEXT.
@@ -31,7 +32,8 @@ export function createTelegramNotifierAgent(
 			😔 Investment workflow failed
 
 			[ANALYSIS OF THE FAILURE FROM CONTEXT IN 1-2 SENTENCES INCLUDING THE DETAILS ON THE AGENT AND THE AMOUNT]
-		`)
-		.withTools(...telegramTools)
-		.build();
+		`,
+		model,
+		tools,
+	});
 }
