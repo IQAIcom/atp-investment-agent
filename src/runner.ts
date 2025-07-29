@@ -6,7 +6,7 @@ import {
 } from "@iqai/adk";
 import * as cron from "node-cron";
 import { env } from "./env";
-import { buildContext, saveResult, state } from "./utils/app-state";
+import { buildContext, state } from "./utils/app-state";
 
 export async function runScheduled(builtAgent: BuiltAgent) {
 	console.log(`⏰ Scheduled: ${env.ATP_CRON_SCHEDULE}`);
@@ -35,6 +35,7 @@ export async function initializeTelegramToolset() {
 		env: {
 			TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
 			TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID,
+			SAMPLING_RESPOND_TO_DMS: false,
 		},
 	});
 }
@@ -46,7 +47,6 @@ async function runCycle(builtAgent: BuiltAgent) {
 		const context = buildContext();
 		const response = await runner.ask(context);
 		console.log(`✅ Result: ${response}`);
-		saveResult(response);
 	} catch (error) {
 		const errorMsg =
 			error instanceof McpError
