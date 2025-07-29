@@ -1,9 +1,25 @@
-import { AgentBuilder, type BuiltAgent, McpAtp } from "@iqai/adk";
+import {
+	AgentBuilder,
+	type BuiltAgent,
+	InMemorySessionService,
+	McpAtp,
+} from "@iqai/adk";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { env } from "../env";
 import { state } from "../utils/app-state";
 import { createAcquireAgent } from "./acquire";
 import { createTelegramNotifierAgent } from "./telegram-notifier";
+
+let model: any;
+if (env.OPEN_ROUTER_KEY) {
+	console.log("🚀 AGENT WILL USE OPENROUTER 🚀");
+	const openrouter = createOpenRouter({
+		apiKey: env.OPEN_ROUTER_KEY,
+	});
+	model = openrouter(env.LLM_MODEL);
+} else {
+	model = env.LLM_MODEL;
+}
 
 export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 	if (!state.atpToolset || !state.telegramToolset) {
@@ -11,42 +27,24 @@ export async function createAtpInvestmentAgent(): Promise<BuiltAgent> {
 	}
 	const atpTools = await state.atpToolset.getTools();
 	const telegramTools = await state.telegramToolset.getTools();
-	let model: any;
-	if (env.OPEN_ROUTER_KEY) {
-		console.log("🚀 AGENT WILL USE OPENROUTER 🚀");
-		const openrouter = createOpenRouter({
-			apiKey: env.OPEN_ROUTER_KEY,
-		});
-		model = openrouter(env.LLM_MODEL);
-	} else {
-		model = env.LLM_MODEL;
-	}
-	const acquireAgent = createAcquireAgent(atpTools, env.LLM_MODEL);
-	const telegramAgent = createTelegramNotifierAgent(
-		telegramTools,
-		env.LLM_MODEL,
-	);
+
+	const acquireAgent = createAcquireAgent(atpTools, model);
+	const telegramAgent = createTelegramNotifierAgent(telegramTools, model);
+
+	// Set up session service with initial state
+	const sessionService = new InMemorySessionService();
+	const initialState = {
+		investment_history: [],
+	};
+	const sessionConfig = { state: initialState };
 
 	return await AgentBuilder.create("atp_investment_workflow")
 		.withDescription(
-			"Autonomous ATP agent investment workflow with discovery, analysis, and execution",
+			"ATP investment workflow with persistent state and structured data management",
 		)
 		.withModel(model)
-		.asLangGraph(
-			[
-				{
-					name: "acquire",
-					agent: acquireAgent,
-					targets: ["telegram_notifier"],
-				},
-				{
-					name: "telegram_notifier",
-					agent: telegramAgent,
-					condition: (_) => true,
-				},
-			],
-			"acquire",
-		)
+		.withSessionService(sessionService, sessionConfig)
+		.asSequential([acquireAgent, telegramAgent])
 		.build();
 }
 
@@ -66,7 +64,7 @@ export async function initializeSocialsAgent() {
 	const builtAgent = await AgentBuilder.create(
 		"atp_investment_workflow_social_agent",
 	)
-		.withModel(env.LLM_MODEL)
+		.withModel(model)
 		.withDescription("Social media agent")
 		.withInstruction(`
 			You are social media agent for ATP investment agent.
