@@ -22,11 +22,11 @@ export async function createAcquireAgent() {
 			3. Call save_investment_result to record the outcome
 
 			TOOL USAGE RESTRICTIONS:
-			- ONLY use: ATP_GET_AGENTS, ATP_BUY_AGENT, save_investment_result
-			- NEVER use: ATP_AGENT_STATS, ATP_GET_AGENT_POSITIONS, ATP_GET_AGENT_LOGS, ATP_ADD_AGENT_LOG, ATP_SELL_AGENT
+			- ONLY USE: ATP_GET_AGENTS, ATP_BUY_AGENT, save_investment_result
+			- NEVER USE: ATP_AGENT_STATS, ATP_GET_AGENT_POSITIONS, ATP_GET_AGENT_LOGS, ATP_ADD_AGENT_LOG, ATP_SELL_AGENT
 
 			INVESTMENT CRITERIA:
-			- Choose from the top 3 agents by market cap (indicates strong performance)
+			- Choose from the top 10 agents by market cap (indicates strong performance)
 			- Consider price per token (lower = more tokens for your budget)
 			- Consider holder count (higher = stronger community)
 			- User's investment budget is provided in context
@@ -43,6 +43,7 @@ export async function createAcquireAgent() {
 			2. Without ATP_BUY_AGENT call, no investment happens
 			3. After ATP_BUY_AGENT, immediately call save_investment_result
 			4. If ATP_BUY_AGENT fails, still call save_investment_result with success=false
+			5. Try to buy another agent tokens if the investment fails, but do not overdo it (the limit is 2-3 times)
 
 			IMPORTANT: After attempting to buy, ALWAYS use save_investment_result tool to record:
 			- agent_name: Name of the agent
@@ -53,6 +54,7 @@ export async function createAcquireAgent() {
 			- error: Error message if failed, empty if successful
 			- reasoning: Brief explanation of why you chose this agent
 
+			IMPORTANT:
 			Then return a structured JSON object with the same information:
 			{
 				"success": true/false,
@@ -63,6 +65,7 @@ export async function createAcquireAgent() {
 				"error": "error message if failed",
 				"reasoning": "brief explanation of the decision"
 			}
+			YOU MUST RESPOND ONLY IN THIS STRUCTURED JSON
 		`,
 		outputKey: "investment_result",
 		model,
