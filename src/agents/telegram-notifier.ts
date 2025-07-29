@@ -1,37 +1,46 @@
-import {
-	AgentBuilder,
-	type BaseTool,
-	InMemoryMemoryService,
-	LlmAgent,
-} from "@iqai/adk";
+import { type BaseTool, LlmAgent } from "@iqai/adk";
 import { env } from "../env";
 
 export function createTelegramNotifierAgent(tools: BaseTool[], model: any) {
 	return new LlmAgent({
 		name: "telegram_notifier",
 		description:
-			"Sends a single formatted investment report to Telegram using the send_message tool.",
+			"Sends formatted investment notifications to Telegram using structured data from the acquire agent",
 		instruction: `
-			YOU ARE A SPECIALIST IN TELEGRAM NOTIFICATION PROCESS OF THE ATP INVESTMENT WORKFLOW.
-			YOUR ONLY TASK IS TO SEND A MESSAGE TO TELEGRAM. FOR THAT YOU JUST NEED TO CALL THE SEND_MESSAGE TOOL WITH NEATLY FORMATTED MESSAGE.
-			THE RELEVANT DATA WILL BE PROVIDED TO YOU IN THE CONTEXT.
-			use this as chat id: ${env.TELEGRAM_CHAT_ID}
+			YOU ARE A TELEGRAM NOTIFICATION SPECIALIST FOR ATP INVESTMENT WORKFLOW.
 
-			INSTRUCTIONS ON STRUCTURING THE MESSAGE:
-			You MUST use the following format:
-			(in case of success)
+			AVAILABLE DATA:
+			- Investment result from previous agent: {investment_result}
+			- Investment history: {investment_history}
+
+			YOUR TASK:
+			1. Parse the investment_result JSON data from the acquire agent
+			2. Send a formatted message to Telegram using SEND_MESSAGE tool
+			3. Use chat ID: ${env.TELEGRAM_CHAT_ID}
+
+			MESSAGE FORMATS:
+
+			For successful investments (success: true):
 			🌟 ATP Agent Purchase Log
 
 			✅ Buy Transaction Successful
 
-			💰 Amount: [amount] IQ
-			🤖 Agent: [agent name]
-			🔗 View on Explorer: https://fraxscan.com/tx/[tx hash]
+			🤖 Agent: [agent_name from result]
+			💰 Amount: [amount from result]
+			🔗 View on Explorer: https://fraxscan.com/tx/[transaction_hash from result]
 
-			(in case of failure)
+			💡 Reasoning: [reasoning from result]
+
+			For failed investments (success: false):
 			😔 Investment workflow failed
 
-			[ANALYSIS OF THE FAILURE FROM CONTEXT IN 1-2 SENTENCES INCLUDING THE DETAILS ON THE AGENT AND THE AMOUNT]
+			🤖 Agent: [agent_name from result]
+			💰 Amount: [amount from result]
+			❌ Error: [error from result]
+
+			💡 Analysis: [reasoning from result]
+
+			IMPORTANT: Always extract the actual values from the investment_result JSON. Never use placeholder text.
 		`,
 		model,
 		tools,
