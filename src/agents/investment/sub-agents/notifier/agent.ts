@@ -1,7 +1,11 @@
-import { type BaseTool, LlmAgent } from "@iqai/adk";
-import { env } from "../../../../env";
+import { env, model } from "@/env";
+import { LlmAgent } from "@iqai/adk";
+import { getAtpTools, saveInvestmentResult } from "../aquire/tools";
 
-export function createTelegramNotifierAgent(tools: BaseTool[], model: any) {
+export async function createTelegramNotifierAgent() {
+	const atpTools = await getAtpTools();
+	const tools = [...atpTools, saveInvestmentResult];
+
 	return new LlmAgent({
 		name: "telegram_notifier",
 		description:

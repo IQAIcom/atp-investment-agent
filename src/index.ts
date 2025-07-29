@@ -1,29 +1,14 @@
 import * as dotenv from "dotenv";
-import {
-	createAtpInvestmentAgent,
-	initializeSocialsAgent,
-} from "./agents/investment/agent";
-import { env } from "./env";
-import { initializeTelegramToolset, runScheduled } from "./runner";
-import { WalletService } from "./services/wallet";
-import { logStart, state } from "./utils/app-state";
+import { createAtpInvestmentAgent } from "./agents/investment/agent";
+import { createTelegramAgent } from "./agents/telegram-agent/agent";
+import { runScheduled } from "./cron";
 
 dotenv.config();
 
 async function main() {
-	const builtAgent = await setup();
+	await createTelegramAgent();
+	const builtAgent = await createAtpInvestmentAgent();
 	await runScheduled(builtAgent);
-}
-
-async function setup() {
-	logStart();
-	await initializeSocialsAgent();
-	await initializeTelegramToolset();
-	const walletService = new WalletService(env.WALLET_PRIVATE_KEY);
-
-	state.walletInfo = await walletService.displayWalletStatus();
-
-	return createAtpInvestmentAgent();
 }
 
 main().catch((error) => {

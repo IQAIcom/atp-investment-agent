@@ -1,5 +1,28 @@
-import { createTool } from "@iqai/adk";
+import { env } from "@/env";
+import { BaseTool, createTool } from "@iqai/adk";
+import { McpAtp } from "@iqai/adk";
 import * as z from "zod";
+
+let tools: BaseTool[];
+
+export const getAtpTools = async () => {
+	if (!tools) {
+		const toolset = McpAtp({
+			env: {
+				ATP_WALLET_PRIVATE_KEY: env.WALLET_PRIVATE_KEY,
+				...(env.ATP_API_URL ? { ATP_API_URL: env.ATP_API_URL } : {}),
+				...(env.ATP_AGENT_ROUTER_ADDRESS
+					? { ATP_AGENT_ROUTER_ADDRESS: env.ATP_AGENT_ROUTER_ADDRESS }
+					: {}),
+				ATP_BASE_TOKEN_ADDRESS: env.IQ_ADDRESS,
+				PATH: env.PATH,
+			},
+		});
+
+		tools = await toolset.getTools();
+	}
+	return tools;
+};
 
 export const saveInvestmentResult = createTool({
 	name: "save_investment_result",

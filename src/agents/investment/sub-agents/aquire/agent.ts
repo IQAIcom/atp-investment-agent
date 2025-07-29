@@ -1,8 +1,10 @@
-import { type BaseTool, LlmAgent } from "@iqai/adk";
-import { saveInvestmentResult } from "./tools";
+import { model } from "@/env";
+import { LlmAgent } from "@iqai/adk";
+import { getAtpTools, saveInvestmentResult } from "./tools";
 
-export function createAcquireAgent(tools: BaseTool[], model: any) {
-	const allTools = [...tools, saveInvestmentResult];
+export async function createAcquireAgent() {
+	const atpTools = await getAtpTools();
+	const allTools = [...atpTools, saveInvestmentResult];
 
 	return new LlmAgent({
 		name: "acquire",

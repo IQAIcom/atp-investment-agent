@@ -93,8 +93,6 @@ See `example.env` for all options. Key variables:
 
 - `agents/` – Specialized agents for each workflow step
 - `services/` – Wallet management and validation
-- `utils/` – Utility functions
-- `atp-investment-agent.ts` – Main workflow class
 - `index.ts` – Entry point and scheduler
 - `dist/` – Compiled JavaScript output
 
