@@ -1,5 +1,5 @@
 import { type BaseTool, LlmAgent } from "@iqai/adk";
-import { saveInvestmentResult } from "../tools/save-investment-result";
+import { saveInvestmentResult } from "./tools";
 
 export function createAcquireAgent(tools: BaseTool[], model: any) {
 	const allTools = [...tools, saveInvestmentResult];

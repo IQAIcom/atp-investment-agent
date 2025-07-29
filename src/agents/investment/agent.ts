@@ -5,10 +5,10 @@ import {
 	McpAtp,
 } from "@iqai/adk";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { env } from "../env";
-import { state } from "../utils/app-state";
-import { createAcquireAgent } from "./acquire";
-import { createTelegramNotifierAgent } from "./telegram-notifier";
+import { env } from "../../env";
+import { state } from "../../utils/app-state";
+import { createAcquireAgent } from "./sub-agents/aquire/agent";
+import { createTelegramNotifierAgent } from "./sub-agents/notifier/agent";
 
 let model: any;
 if (env.OPEN_ROUTER_KEY) {

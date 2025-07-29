@@ -1,5 +1,5 @@
 import { type BaseTool, LlmAgent } from "@iqai/adk";
-import { env } from "../env";
+import { env } from "../../../../env";
 
 export function createTelegramNotifierAgent(tools: BaseTool[], model: any) {
 	return new LlmAgent({

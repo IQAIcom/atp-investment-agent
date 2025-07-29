@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 import {
 	createAtpInvestmentAgent,
 	initializeSocialsAgent,
-} from "./agents/atp-investment-agent";
+} from "./agents/investment/agent";
 import { env } from "./env";
 import { initializeTelegramToolset, runScheduled } from "./runner";
 import { WalletService } from "./services/wallet";
