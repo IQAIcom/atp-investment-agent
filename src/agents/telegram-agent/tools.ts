@@ -6,9 +6,7 @@ export const getTelegramTools = async (samplingHandler?: SamplingHandler) => {
 	if (!tools) {
 		const toolset = McpTelegram({
 			samplingHandler,
-			env: {
-				...process.env,
-			},
+			env: process.env,
 		});
 		tools = await toolset.getTools();
 	}
