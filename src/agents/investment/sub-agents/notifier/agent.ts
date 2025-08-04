@@ -22,6 +22,7 @@ export async function createTelegramNotifierAgent() {
 			1. Parse the investment_result JSON data from the acquire agent
 			2. Send a formatted message to Telegram using SEND_MESSAGE tool
 			3. Use chat ID: ${env.TELEGRAM_CHAT_ID}
+			4. Use topic ID: ${env.TELEGRAM_TOPIC_ID}
 
 			MESSAGE FORMATS:
 

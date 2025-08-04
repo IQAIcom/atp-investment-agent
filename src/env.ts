@@ -20,6 +20,12 @@ export const envSchema = z.object({
 		.optional()
 		.describe("When given, agents use open-router endpoint instead"),
 	TELEGRAM_CHAT_ID: z.string(),
+	TELEGRAM_TOPIC_ID: z
+		.string()
+		.optional()
+		.describe(
+			"Telegram topic id for logging, Can be useful for sending messages to a specific topic of a forum style group",
+		),
 	TELEGRAM_BOT_TOKEN: z.string(),
 	ATP_INVESTMENT_PERCENTAGE: z
 		.string()
