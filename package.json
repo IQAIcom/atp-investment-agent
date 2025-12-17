@@ -45,6 +45,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@iqai/mcp-atp": "0.0.6",
+		"@iqai/mcp-telegram": "0.1.0",
 		"@types/node": "^22.15.29",
 		"@types/node-cron": "^3.0.11",
 		"husky": "^9.0.0",

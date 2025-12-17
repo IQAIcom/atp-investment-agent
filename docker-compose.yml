@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  atp-agent:
+    build: .
+    container_name: atp-investment-agent
+    environment:
+      - DEBUG=@iqai/*
+      - NODE_ENV=development
+      - LLM_MODEL=gemini-2.0-flash
+      - WALLET_PRIVATE_KEY=${WALLET_PRIVATE_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - OPEN_ROUTER_KEY=${OPEN_ROUTER_KEY}
+    volumes:
+      - ./.env:/app/.env:ro
+    stdin_open: true
+    tty: true
+    # Remove if you want it to run in background
+    # Add this if you want to keep container running for debugging:
+    # command: tail -f /dev/null
